@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+  logregator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    container_name: logs
+    volumes:
+      - "logdata:/data"
+    environment:
+      LOG_LOCATION: /data
+      LOG_MAX_FILES: 3
+      LOG_MAX_SIZE: 104857600
+    ports:
+      - "514:514/udp"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+volumes:
+  logdata:
+
+      

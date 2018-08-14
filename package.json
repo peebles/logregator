@@ -1,0 +1,20 @@
+{
+  "name": "logregator",
+  "version": "1.0.0",
+  "description": "Aggregate logs from multiple containers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrew Peebles",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.1",
+    "forever": "^0.15.3",
+    "mkdirp": "^0.5.1",
+    "promise-queue": "^2.2.5",
+    "syslogd": "^1.1.2",
+    "winston": "^3.0.0",
+    "winston-syslog": "^2.0.0"
+  }
+}
