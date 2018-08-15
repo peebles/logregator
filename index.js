@@ -36,9 +36,13 @@ const metaString = (meta) => {
 
 // Syslogd message handler
 const handler = (msg) => {
-  let m = normalizer( msg );
-  writer.write( m );
-  console.log( `${m.time} ${m.program} [${m.level}] ${m.message} ${metaString(m.meta)}` );
+  try {
+    let m = normalizer( msg );
+    writer.write( m );
+    console.log( `${m.time} ${m.program} [${m.level}] ${m.message} ${metaString(m.meta)}` );
+  } catch( err ) {
+    console.log( 'Failed to parse incoming:', msg, err );
+  }
 }
 
 let SYSLOG_PORT = process.env.SYSLOG_PORT || 514;
