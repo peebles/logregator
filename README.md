@@ -10,6 +10,8 @@ This thing runs as a `syslog` server (on port 514/udp by default) and also runs 
 Clients can write logs via syslog protocol (I use winston-syslog) and users can view the logs in realtime via the
 web server.
 
+![UX](Cloud_Logger.png)
+
 ## Quick Start
 
 Create a file called "./env.txt" that looks something like this:
