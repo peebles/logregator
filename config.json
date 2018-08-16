@@ -1,0 +1,52 @@
+{
+  "webserver_port": 8080,
+  "auth": {
+    "username": "ENV:WEBSERVER_USER:admin",
+    "password": "ENV:WEBSERVER_PASS:password"
+  },
+  "logger": {
+    "level": "info",
+    "filename": "/tmp/proxy.log"
+  },
+  "logs": {
+    "location": "ENV:LOGS_LOCATION:/data",
+    "maxsize": "ENV:LOGS_MAXSIZE:104857600",
+    "maxfiles": "ENV:LOGS_MAXFILES:3"
+  },
+  "email": {
+    "transport": "ENV:EMAIL_TRANSPORT:smtp",
+    "from": "ENV:EMAIL_FROM:events@newco.com",
+    "transports": {
+      "smtp": {
+	"auth": {
+	  "user": "ENV:SMTP_USER:admin",
+	  "pass": "ENV:SMTP_PASS:password"
+	},
+	"port": "ENV:SMTP_PORT:465",
+	"host": "ENV:SMTP_HOST:smtp.gmail.com",
+	"secure": "ENV:SMTP_SECURE:true",
+	"ignoreTLS": "ENV:SMTP_IGNORETLS:false",
+	"requireTLS": "ENV:SMTP_REQUIRETLS:true",
+	"name": "ENV:SMTP_NAME:logstash-proxy",
+	"localAddress": "ENV:SMTP_LOCAL_ADDRESS:0.0.0.0",
+	"connectionTimeout": "ENV:SMTP_CONNECTION_TIMEOUT:3000",
+	"greetingTimeout": "ENV:SMTP_GREETING_TIMEOUT:3000",
+	"socketTimeout": "ENV:SMTP_SOCKET_TIMEOUT:5000",
+	"debug": "ENV:SMTP_DEBUG:false",
+	"lmtp": "ENV:SMTP_LMTP:false",
+	"authMethod": "ENV:SMTP_AUTH:PLAIN",
+	"tls": {}
+      },
+      "ses": {
+	"transport": "ses",
+        "accessKeyId": "ENV:SES_ACCESSKEYID:YOURKEY",
+        "secretAccessKey": "ENV:SES_SECRETACCESSKEY:YOURSECRET"
+      }
+    }
+  },
+  "db": {
+    "connection": {
+      "filename": "ENV:SQLITEDB:/tmp/logger.db"
+    }
+  }
+}

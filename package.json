@@ -1,20 +1,45 @@
 {
   "name": "logregator",
-  "version": "1.0.0",
-  "description": "Aggregate logs from multiple containers",
-  "main": "index.js",
+  "version": "1.0.1",
+  "description": "Aggregate syslogs from multiple sources and view them, get email alerts",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Andrew Peebles",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/peebles/logregator.git"
+  },
+  "keywords": [
+    "alert",
+    "tail",
+    "syslog",
+    "realtime",
+    "log",
+    "devops"
+  ],
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.5.1",
+    "async": "^2.5.0",
+    "basic-auth": "^1.0.0",
+    "body-parser": "~1.0.0",
+    "cookie-parser": "~1.0.1",
+    "ejs": "~0.8.5",
+    "env-friendly-config": "^1.0.5",
+    "express": "^4.8.2",
     "forever": "^0.15.3",
+    "json-lucene-like-query": "0.0.1",
+    "knex": "^0.8.6",
+    "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
-    "promise-queue": "^2.2.5",
+    "moment": "^2.10.6",
+    "nodemailer": "2.6.4",
+    "nodemailer-ses-transport": "^1.5.0",
+    "sprintf-js": "^1.1.1",
+    "sqlite3": "^3.0.9",
+    "static-favicon": "^1.0.2",
     "syslogd": "^1.1.2",
-    "winston": "^3.0.0",
-    "winston-syslog": "^2.0.0"
+    "winston": "^2.3.1"
   }
 }

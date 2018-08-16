@@ -9,12 +9,11 @@ services:
     container_name: logs
     volumes:
       - "logdata:/data"
-    environment:
-      LOG_LOCATION: /data
-      LOG_MAX_FILES: 3
-      LOG_MAX_SIZE: 104857600
+    env_file:
+      - ./env.txt
     ports:
       - "514:514/udp"
+      - "8080:8080"
     logging:
       driver: "json-file"
       options:
