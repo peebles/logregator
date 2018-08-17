@@ -43,6 +43,17 @@ Then launch the container:
 docker-compose up -d
 ```
 
+## TCP Support
+
+As of this writing the currently released winston-syslog is broken if you set the protocol to "tcp".  It seems to work fine if you
+stick with "udp".  If you want to use tcp, then on your client:
+
+```sh
+npm install --save https://github.com/Savorylabs/winston-syslog/archive/2.0.1.tar.gz
+```
+
+That will get you someone's fork that has tcp support fixed.  In my simple tests, it seems to work.
+
 ## Backups
 
 Wanna back up your logs to S3?  Consider [this](https://github.com/peebles/docker-backup-to-s3).  Just mount the volume "logdata"
