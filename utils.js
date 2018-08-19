@@ -7,28 +7,56 @@ let async = require( 'async' );
 let writer = require( './lib/writer' );
 let net = require( 'net' );
 let _ = require( 'lodash' );
-const syslogd = require( 'syslogd' );
+
+const gelfServer = require( 'graygelf/server' );
 
 function setupProxyServers( app, messageQueue, cb ) {
   writer.initialize( app.config.logs );
 
+  const lvlMap = [
+    'emerg',
+    'alert',
+    'crit',
+    'error',
+    'warn',
+    'notice',
+    'info',
+    'debug'
+  ];
+  
   // normaize an incoming syslog message
   const normalizer = (msg) => {
-    let json = JSON.parse( msg.msg );
-    let message = json.message; delete json.message;
-    let level = json.level; delete json.level;
-    let program = msg.tag.replace(/\[\d+\]/, '');
+    let _json = _.omit( msg, [
+      'version', 'timestamp',
+      'short_message',
+      'host', 'level',
+      '_program', '_version',
+      '_error_message', '_error_stack'
+    ]);
 
-    message = `[${level}] ${message} ${metaString(json)}`
+    if ( msg._error_message ) {
+      // this is something that gelf-pro adds when dealing with Error()s
+      if ( ! msg.short_message ) msg.short_message = `${msg._error_message} ${msg._error_stack}`;
+      else msg.short_message = `${msg.short_message} ${msg._error_stack}`;
+    }
     
-    return {
-      timestamp: msg.time.toISOString(),
-      program,
-      host: msg.hostname,
-      level,
+    let json = {};
+    Object.keys( _json ).forEach( (k)=> {
+      json[k.slice(1)] = _json[k];
+    });
+
+    let message = `[${lvlMap[msg.level]}] ${msg.short_message} ${metaString(json)}`
+    
+    let norm = {
+      timestamp: new Date( msg.timestamp * 1000 ).toISOString(),
+      program: msg._program,
+      host: msg.host,
+      level: lvlMap[msg.level],
       message,
       meta: json
     };
+
+    return norm;
   }
 
   // Turn the metadata into a string (if it has any properties)
@@ -50,11 +78,9 @@ function setupProxyServers( app, messageQueue, cb ) {
     }
   }
 
-  let SYSLOG_PORT = process.env.SYSLOG_PORT || 514;
-  syslogd( handler ).listen( SYSLOG_PORT, (err) => {
-    if ( err ) app.log.error( err );
-    app.log.info( 'syslog listening on', SYSLOG_PORT );
-  });
+  let server = gelfServer();
+  server.on( 'message', handler );
+  server.listen( process.env.GELF_PORT || 12201 );
 
   cb();
 }

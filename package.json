@@ -1,7 +1,7 @@
 {
   "name": "logregator",
-  "version": "1.0.1",
-  "description": "Aggregate syslogs from multiple sources and view them, get email alerts",
+  "version": "1.1.0",
+  "description": "Aggregate GELF from multiple sources and view them, get email alerts",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,7 +14,8 @@
   "keywords": [
     "alert",
     "tail",
-    "syslog",
+    "gelf",
+    "graylog",
     "realtime",
     "log",
     "devops"
@@ -29,6 +30,7 @@
     "env-friendly-config": "^1.0.5",
     "express": "^4.8.2",
     "forever": "^0.15.3",
+    "graygelf": "^1.2.0",
     "json-lucene-like-query": "0.0.1",
     "knex": "^0.8.6",
     "lodash": "^4.17.4",
@@ -39,7 +41,6 @@
     "sprintf-js": "^1.1.1",
     "sqlite3": "^3.0.9",
     "static-favicon": "^1.0.2",
-    "syslogd": "https://github.com/peebles/syslogd/archive/v1.0.tar.gz",
     "winston": "^2.3.1"
   }
 }

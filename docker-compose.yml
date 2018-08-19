@@ -12,8 +12,7 @@ services:
     env_file:
       - ./env.txt
     ports:
-      - "514:514/udp"
-      - "514:514"
+      - "12201:12201/udp"
       - "8080:8080"
     logging:
       driver: "json-file"

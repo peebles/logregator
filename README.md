@@ -6,9 +6,11 @@
 4. I still want to be able to get at physical ascii log files to grep, sed, awk, etc.
 5. I never want to run out of disk space due to logging.  I want my physical logs to be rotated and compressed and thrown away when they get old.
 
-This thing runs as a `syslog` server (on port 514/udp by default) and also runs a web server on port 8080 (by default).  
-Clients can write logs via syslog protocol (I use winston-syslog) and users can view the logs in realtime via the
+This thing runs as a `graylog2` server (on port 12201/udp by default) and also runs a web server on port 8080 (by default).  
+Clients can write logs via GELF protocol (I use [winston-gelf-pro](https://github.com/peebles/winston-gelf-pro)) and users can view the logs in realtime via the
 web server.
+
+This server only supports GELF over UDP.
 
 ![UX](Cloud_Logger.png)
 
@@ -43,26 +45,110 @@ Then launch the container:
 docker-compose up -d
 ```
 
-## TCP Support
-
-As of this writing the currently released winston-syslog is broken if you set the protocol to "tcp".  It seems to work fine if you
-stick with "udp".  If you want to use tcp, then on your client:
-
-```sh
-npm install --save https://github.com/Savorylabs/winston-syslog/archive/2.0.1.tar.gz
-```
-
-That will get you someone's fork that has tcp support fixed.  In my simple tests, it seems to work.
-
 ## Backups
 
 Wanna back up your logs to S3?  Consider [this](https://github.com/peebles/docker-backup-to-s3).  Just mount the volume "logdata"
 into "/data" on that container.
 
-## Configuration
+## Server Configuration
 
 See "./config.json" for the configuration that is possible.  Most of it involves configuring email to get notifications
 of events when they occur.
+
+## Client Configuration
+
+I recommend [winston-gelf-pro](https://github.com/peebles/winston-gelf-pro) which is a pretty thin winston transport wrapper around [gelf-pro](https://github.com/kkamkou/node-gelf-pro).  The following configuration
+code will work nicely, giving you nicely formatted errors and exceptions.  It will also communicate the `program` by using the package name in "package.json".  And it
+will include the NODE_ENV value in the metadata for every message.
+
+**NOTE** As of this writing, I also recommend winston 2.x.  winston-gelf-pro will work with winston 3.x, but winston 3.x is still a little green around the
+ears and has some compatibility issues.  So ...
+
+```sh
+npm install --save winston@2
+npm install --save winston-gelf-pro
+```
+
+```javascript
+const winston = require( 'winston' );
+const package = require( './package.json' );
+require( 'winston-gelf-pro' );
+
+let transports = [];
+
+transports.push(
+  new winston.transports.Console({
+    handleExceptions: true,
+    humanReadableUnhandledException: true,
+    colorize: true,
+    timestamp: true,
+    prettyPrint: function( meta ) {
+      if ( meta && meta.trace && meta.stack && meta.stack.length ) {
+        if ( Array.isArray( meta.stack ) )
+          return "\n" + meta.stack.slice(1).join( "\n" );
+        else
+          return "\n" + meta.stack;
+      }
+      else if ( meta && meta.message && meta.stack ) {
+        return meta.stack;
+      }
+      return JSON.stringify( meta );
+    },
+
+  })
+);
+
+transports.push(
+  new winston.transports.GelfPro({
+    level: 'debug',
+    handleExceptions: true,
+    humanReadableUnhandledException: true,
+    gelfPro: {
+      fields: {
+        env: process.env.NODE_ENV || 'development',
+        program: package.name,
+      },
+      transform: [
+        function(m) {
+          if ( m.process && m.os && m.trace && m.stack ) {
+            // This is an uncaught exception.  Format it so it shows up
+            // in logregator nicer.
+            m.short_message = m.stack.join('\n');
+            delete m.date;
+            delete m.process;
+            delete m.os;
+            delete m.trace;
+            delete m.stack;
+          }
+          return m;
+        }
+      ],
+      adapterName: 'udp',
+      adapterOptions: {
+        protocol: 'udp4',
+        host: '192.168.99.100',
+        port: 12201
+      }
+    }
+  })
+);
+
+log = new (winston.Logger)({
+  transports: transports
+});
+
+// test...
+log.info( 'here we go', 'again' );
+log.info( 'here we go', {"foo":"bar"} );
+log.debug( 'This is a debug message' );
+log.warn( 'This is a warning' );
+log.error( 'error:', new Error( 'MyError Message' ) );
+log.error( new Error( 'GENERATED' ) );
+
+// uncaught exception handling
+let foo = bar;
+
+```
 
 ## Access to Raw Files
 
