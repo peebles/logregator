@@ -16,7 +16,9 @@ module.exports = function( app ) {
     get: function( offset, regex, cb ) {
       var ret = [];
       if ( offset < TOP ) offset = TOP;
+      var lines = 0;
       for( var i=(offset - TOP); i<q.length; i++ ) {
+        lines += 1;
 	var json = q[i];
 	var fullLine;
 	if ( json.program )
@@ -42,7 +44,7 @@ module.exports = function( app ) {
       }
       cb( null, {
 	buffer: ret.join(''),
-	bytes: TOP + q.length + 1,
+	bytes: lines
       });
     },
   };
