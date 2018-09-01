@@ -183,4 +183,29 @@ is very similar to how you'd search for things in Elastic Search if you've ever 
 expression in the search field to filter the messages shown.  Then you can click on the `Save Event` button to create an
 event based on that search expression and send emails to people when that event occurs.
 
+## Database Initialization 
 
+You can pre-populate events and users from information in the "config.json" file if you like.  Change the "db" section 
+to look something like this:
+
+```javascript
+  "db": {
+    "connection": {
+      "filename": "ENV:SQLITEDB:/tmp/logger.db"
+    },
+    "events": {
+      "App Error": {
+        "regex": "level:error",
+        "users": [
+          "you@yours.com"
+        ]
+      },
+      "App Message": {
+        "regex": "message:\"something happened\"",
+        "users": [
+          "you@yours.com"
+        ]
+      }
+    }
+  }
+```

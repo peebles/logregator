@@ -133,12 +133,52 @@ function setupDatabase( app, config, cb ) {
       }).catch( cb );
     }, function( err ) {
       if ( err ) return cb( err );
-      cb( null, db );
+      populateDatabase( db, config, (err) => {
+        cb( err, db );
+      });
     });
   }
   else {
     cb( null, db );
   }
+}
+
+function upsert( db, table, o, cb ) {
+  db( table ).where( o ).then( (objects) => {
+    if ( objects.length ) {
+      db( table ).where( o ).update( o ).then( (result) => {
+        cb( null, result );
+      }).catch( cb );
+    }
+    else {
+      db( table ).insert( o ).then( (ids) => {
+        o.id = ids[0];
+        cb( null, o );
+      }).catch( cb );
+    }
+  }).catch( cb );
+}
+
+function populateDatabase( db, config, cb ) {
+  let events = config.events || {};
+  async.eachSeries( Object.keys( events ), (eventName, cb) => {
+    let e = events[ eventName ];
+    let event = {
+      name: eventName,
+      regex: e.regex
+    };
+    upsert( db, 'events', event, (err, eDb) => {
+      if ( err ) return cb( err );
+      async.eachSeries( e.users, (email, cb) => {
+        let user = {
+          email: email,
+          freq: 15,
+          event_id: eDb.id
+        };
+        upsert( db, 'users', user, cb );
+      }, cb );
+    });
+  }, cb );
 }
 
 module.exports = {
