@@ -19,13 +19,6 @@ app.log = new (winston.Logger)({
       humanReadableUnhandledException: true,
       level: app.config.logger.level
     }),
-    new (winston.transports.File)({ 
-      json: false, 
-      handleExceptions: true,
-      humanReadableUnhandledException: true,
-      level: app.config.logger.level,
-      filename: app.config.logger.filename
-    }),
   ],
   exitOnError: false
 });
@@ -49,6 +42,8 @@ var mq = async.queue( function( json, cb ) {
   DBUtils.handle_line( fullLine, json, cb );
 }, 1 );
 
+app.set( 'lineQueue', require( './line-queue' )( app ) );
+
 async.series([
   function( cb ) {
     utils.setupDatabase( app, app.config.db, function( err, db ) {
@@ -63,6 +58,39 @@ async.series([
       cb();
     });
   },
+  function( cb ) {
+    let root = app.config.logs.location || '/tmp';
+    let allLog = require( 'path' ).join( root, 'all.log' );
+    // Read the file if it exists and initialize the line queue
+    const fs = require( 'fs' );
+    const readline = require( 'readline' );
+    console.log( 'Looking for', allLog );
+    if ( ! fs.existsSync( allLog ) ) return process.nextTick( cb );
+    const rl = readline.createInterface({
+      input: fs.createReadStream( allLog ),
+      crlfDelay: Infinity
+    });
+    console.log( 'initializing line queue...' );
+    let lines = 0;
+    let re = new RegExp( /(\S+:\S+:\S+) ([\S]+): \[([\S]+)\] (.*)/ );
+    rl.on( 'line', (line) => {
+      let i = line.match( re );
+      if ( i ) {
+        lines += 1;
+        app.get( 'lineQueue' ).add({
+          timestamp: i[1],
+          host: 'localhost',
+          program: i[2],
+          level: i[3],
+          message: `[${i[3]}] ${i[4]}`
+        });
+      }
+    });
+    rl.on( 'close', () => {
+      console.log( 'line queue initialized, with lines:', lines );
+      cb();
+    });
+  },
 ], function( err ) {
   if ( err ) {
     app.log.error( err );
@@ -70,7 +98,6 @@ async.series([
   }
     
   DBUtils = require( './db' )( app );
-  app.set( 'lineQueue', require( './line-queue' )( app ) );
 
   // view engine setup
   app.set('views', path.join(__dirname, 'views'));

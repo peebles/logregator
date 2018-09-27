@@ -20,73 +20,6 @@ var auth = function() {
     };
 };
 
-function tail( filename, offset, limit, regex, callback ) {
-    var data = {
-	bytes: 0,
-	buffer: ''
-    }
-
-    var regexp = null;
-    if ( regex ) {
-	try { regexp = new RegExp( regex ); }
-	catch( e ) { return callback( e ); }
-    }
-
-    fs.open( filename, 'r', function( err, fd ) {
-	if ( err ) {
-	    app.log.error( 'fs.open', err.message );
-	    return callback( err, data );
-	}
-	var b = new Buffer( 4096 );
-	var lines = [];
-	var linecount = 0;
-	var bytecount = 0;
-	var eof = false;
-	var partial = '';
-	async.doWhilst( 
-	    function( cb ) {
-		fs.read( fd, b, 0, 4096, offset, function( err, bytes, buf ) {
-		    if ( err ) {
-			app.log.error( 'fs.read', err.message );
-			return cb( err );
-		    }
-		    offset += bytes;
-		    if ( bytes == 0 ) { eof = true; return cb() };
-		    var str = partial + buf.toString('utf8',0,bytes);
-		    var localLines = str.split( /\n/ );
-		    if ( ! localLines[ localLines.length - 1 ].match( /\n$/ ) ) {
-			partial = localLines.pop();
-		    }
-		    localLines.forEach( function( l ) {
-			var good = ( regexp ? l.match( regexp ) : true );
-			if ( (linecount < limit) && good ) {
-			    bytecount += l.length + 1;
-			    lines.push( l + '\n' );
-			    linecount += 1;
-			}
-			else if ( ! good ) {
-			    bytecount += l.length + 1;
-			}
-		    });
-		    cb();
-		});
-	    },
-	    function( cb ) {
-		return ( eof == false && linecount < limit );
-	    },
-	    function( err ) {
-		fs.close( fd );
-		if ( err ) callback( err );
-		else {
-		    //console.log( 'returning:', lines.join('') );
-		    callback( null, { bytes: bytecount, 
-				      buffer: lines.join('') } );
-		}
-	    }
-	);
-    });
-}
-
 /* GET home page. */
 router.get('/', auth(), function(req, res) {
     res.render('index', { title: 'Logstash Proxy' });
@@ -96,12 +29,15 @@ router.get('/tail', function( req, res, next ) {
     var offset = req.query[ 'offset' ] || 0;
     var limit  = req.query[ 'limit' ] || 1000;
     var regex  = req.query[ 'regex' ];
-
+  
     offset = Number( offset );
     limit  = Number( limit );
 
-    var size = app.get( 'lineQueue' ).length();
-
+  var size = app.get( 'lineQueue' ).length();
+  var top = app.get( 'lineQueue' ).top();
+  //console.log( `offset: ${offset}, limit: ${limit}, size: ${size}, top: ${top}` );
+  if ( offset < top ) offset = top;
+  
     if ( size <= offset ) {
 	res.setHeader( 'Content-Type', 'text/plain' );
 	res.setHeader( 'X-Seek-Offset', size.toString() );
@@ -114,7 +50,8 @@ router.get('/tail', function( req, res, next ) {
     app.get( 'lineQueue' ).get( offset, regex, function( err, data ) {
 	if ( err ) return next( err );
 	res.setHeader( 'Content-Type', 'text/plain' );
-	var newOffset = offset + data.bytes;
+        var newOffset = offset + data.bytes;
+      //console.log( '  new offset:', newOffset, 'bytes:', data.bytes );
 	res.setHeader( 'X-Seek-Offset', newOffset.toString() );
 	res.write( data.buffer );
 	res.end();

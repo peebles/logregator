@@ -5,13 +5,19 @@ module.exports = function( app ) {
   return {
     add: function( json ) {
       q.push( json );
-      if ( q.length == LIMIT ) {
+      if ( q.length === LIMIT ) {
 	q.shift();
 	TOP += 1;
       }
     },
     length: function() {
       return TOP + q.length;
+    },
+    top: function() {
+      return TOP;
+    },
+    size: function() {
+      return q.length;
     },
     get: function( offset, regex, cb ) {
       var ret = [];
